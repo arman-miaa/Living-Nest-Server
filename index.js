@@ -30,9 +30,14 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
       );
 
+    const apartmentCollection = client.db("apartmentDB").collection("apartments");
       
       
 
+    app.get("/apartments", async (req, res) => {
+      const result = await apartmentCollection.find().toArray();
+      res.send(result);
+    });
 
 
 
@@ -40,7 +45,7 @@ async function run() {
       
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
