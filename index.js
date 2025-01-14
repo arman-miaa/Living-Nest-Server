@@ -45,7 +45,21 @@ async function run() {
 
     app.post("/agreements", async (req, res) => {
       const agreement = req.body;
-      console.log(agreement);
+      const {  userEmail,apartmentNo } = req.body;
+      console.log(userEmail, apartmentNo);
+      
+
+      const existingAgreement = await agreementtCollection.findOne({
+        userEmail: userEmail,
+        apartmentNo: apartmentNo,
+      });
+
+      if (existingAgreement) {
+     return  res
+          .status(400)
+          .send({ message: "You have already applied for this apartment" });
+      }
+
       const result = await agreementtCollection.insertOne(agreement);
       res.send(result)
     });
