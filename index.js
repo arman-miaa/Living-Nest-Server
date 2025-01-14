@@ -31,12 +31,23 @@ async function run() {
       );
 
     const apartmentCollection = client.db("apartmentDB").collection("apartments");
+    const agreementtCollection = client.db("apartmentDB").collection("agreements");
       
       
 
     app.get("/apartments", async (req, res) => {
       const result = await apartmentCollection.find().toArray();
       res.send(result);
+    });
+
+
+    // agreements
+
+    app.post("/agreements", async (req, res) => {
+      const agreement = req.body;
+      console.log(agreement);
+      const result = await agreementtCollection.insertOne(agreement);
+      res.send(result)
     });
 
 
