@@ -12,7 +12,7 @@ app.use(express.json());
 
 
     const verifyToken = (req, res, next) => {
-      console.log("inside verify token", req.headers.authorization);
+      // console.log("inside verify token", req.headers.authorization);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: "unauthorized access" });
       }
@@ -49,6 +49,9 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
 
+    const userCollection = client
+      .db("apartmentDB")
+      .collection("users");
     const apartmentCollection = client
       .db("apartmentDB")
       .collection("apartments");
@@ -64,6 +67,29 @@ async function run() {
       });
       res.send({ token });
     });
+
+
+    // save or update user data on mongodb
+    app.post('/user/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = req.body;
+      // console.log('query email', query, 'user data', user);
+
+      const isExist = await userCollection.findOne(query)
+      if (isExist) {
+        return res.send(isExist);
+      }
+
+      const result = await userCollection.insertOne({
+        ...user,
+        role: "user",
+        timestamp: Date.now(),
+      });
+      res.send(result)
+
+    })
+
 
     app.get("/apartments", async (req, res) => {
       const result = await apartmentCollection.find().toArray();
