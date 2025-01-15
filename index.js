@@ -91,6 +91,24 @@ async function run() {
     })
 
 
+    // get user role
+    // app.get('/user/role/:email', async (req, res) => {
+    //   const email = req.params.email;
+    //   const result = await userCollection.findOne({ email });
+    //   res.send({role: result?.role})
+    // })
+    app.get("/user/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await userCollection.findOne({ email });
+
+      if (!result) {
+        return res.status(404).send({ message: "User not found", role: null });
+      }
+
+      res.send({ role: result.role });
+    });
+
+
     app.get("/apartments", async (req, res) => {
       const result = await apartmentCollection.find().toArray();
       res.send(result);
@@ -98,25 +116,27 @@ async function run() {
 
     // agreements
 
-    app.post("/agreements", verifyToken, async (req, res) => {
-      const agreement = req.body;
-      const { userEmail, apartmentNo } = req.body;
-      // console.log(userEmail, apartmentNo);
+app.post("/agreements", verifyToken, async (req, res) => {
+  const agreement = req.body;
+  const { userEmail } = req.body;
 
-      const existingAgreement = await agreementtCollection.findOne({
-        userEmail: userEmail,
-        apartmentNo: apartmentNo,
-      });
+  const existingAgreement = await agreementtCollection.findOne({
+    userEmail: userEmail,
+  });
 
-      if (existingAgreement) {
-        return res
-          .status(400)
-          .send({ message: "You have already applied for this apartment" });
-      }
+  if (existingAgreement) {
+    return res
+      .status(400)
+      .send({ message: "You have already applied for an apartment" });
+  }
 
-      const result = await agreementtCollection.insertOne(agreement);
-      res.send(result);
-    });
+  const result = await agreementtCollection.insertOne(agreement);
+  res.send(result);
+});
+
+
+
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
