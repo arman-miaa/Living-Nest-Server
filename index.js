@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -28,26 +29,35 @@ async function run() {
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
-      );
+    );
 
-    const apartmentCollection = client.db("apartmentDB").collection("apartments");
-    const agreementtCollection = client.db("apartmentDB").collection("agreements");
-      
-      
+    const apartmentCollection = client
+      .db("apartmentDB")
+      .collection("apartments");
+    const agreementtCollection = client
+      .db("apartmentDB")
+      .collection("agreements");
+
+    // jwt related api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "5h",
+      });
+      res.send({ token });
+    });
 
     app.get("/apartments", async (req, res) => {
       const result = await apartmentCollection.find().toArray();
       res.send(result);
     });
 
-
     // agreements
 
     app.post("/agreements", async (req, res) => {
       const agreement = req.body;
-      const {  userEmail,apartmentNo } = req.body;
-      console.log(userEmail, apartmentNo);
-      
+      const { userEmail, apartmentNo } = req.body;
+      // console.log(userEmail, apartmentNo);
 
       const existingAgreement = await agreementtCollection.findOne({
         userEmail: userEmail,
@@ -55,19 +65,14 @@ async function run() {
       });
 
       if (existingAgreement) {
-     return  res
+        return res
           .status(400)
           .send({ message: "You have already applied for this apartment" });
       }
 
       const result = await agreementtCollection.insertOne(agreement);
-      res.send(result)
+      res.send(result);
     });
-
-
-
-
-      
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
