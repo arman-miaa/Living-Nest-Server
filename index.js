@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const jwt = require("jsonwebtoken");
+ const { ObjectId } = require("mongodb");
+
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -58,6 +60,9 @@ async function run() {
     const agreementtCollection = client
       .db("apartmentDB")
       .collection("agreements");
+    const announcementsCollection = client
+      .db("apartmentDB")
+      .collection("announcements");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -165,7 +170,6 @@ app.post("/agreements", verifyToken, async (req, res) => {
 
     // update user role
 
- const { ObjectId } = require("mongodb");
 
  app.patch("/update-userRole/:userId", async (req, res) => {
    try {
@@ -195,6 +199,15 @@ app.post("/agreements", verifyToken, async (req, res) => {
      res.status(500).send({ message: "Server error" });
    }
  });
+    
+    
+    // announcement APIs
+
+    app.post("/announcements", verifyToken, async (req, res) => {
+      const announcement = req.body;
+      const result = await announcementsCollection.insertOne(announcement);
+      res.send(result);
+    });
 
 
   } finally {
@@ -205,9 +218,9 @@ app.post("/agreements", verifyToken, async (req, res) => {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Welcome Assignment 12");
+  res.send("Living Nest server is running..");
 });
 
 app.listen(port, () => {
-  console.log(`assignment 12 is running on port ${port}`);
+  console.log(`LivingNest is running on port ${port}`);
 });
