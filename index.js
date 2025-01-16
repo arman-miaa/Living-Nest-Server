@@ -163,6 +163,39 @@ app.post("/agreements", verifyToken, async (req, res) => {
       res.send(members)
     })
 
+    // update user role
+
+ const { ObjectId } = require("mongodb");
+
+ app.patch("/update-userRole/:userId", async (req, res) => {
+   try {
+     const { userId } = req.params; 
+     console.log("User ID:", userId); 
+
+    
+     const query = { _id: new ObjectId(userId) }; 
+     const updateDoc = {
+       $set: {
+         role: "user", 
+       },
+     };
+
+    
+     const result = await userCollection.updateOne(query, updateDoc);
+
+     if (result.matchedCount === 0) {
+       return res.status(404).send({ message: "User not found" }); 
+     }
+
+     res
+       .status(200)
+       .send({ message: "User role updated successfully", result });
+   } catch (error) {
+     console.error("Error updating user role:", error);
+     res.status(500).send({ message: "Server error" });
+   }
+ });
+
 
   } finally {
     // Ensures that the client will close when you finish/error
