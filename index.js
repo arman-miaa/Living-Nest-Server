@@ -116,10 +116,18 @@ async function run() {
 
     // agreements
 
+    app.get('/agreement/:email', async (req, res) => {
+      const { email } = req.params.email;
+      const query = {email: email}
+      const result = await agreementtCollection.findOne(query);
+      res.send(result);
+    })
+
 app.post("/agreements", verifyToken, async (req, res) => {
   const agreement = req.body;
   const { userEmail } = req.body;
 
+  agreement.date = new Date();
   const existingAgreement = await agreementtCollection.findOne({
     userEmail: userEmail,
   });
@@ -135,6 +143,25 @@ app.post("/agreements", verifyToken, async (req, res) => {
 });
 
 
+    // admin stats
+
+    // app.get('/admin/stats', verifyToken, async (req, res) => {
+
+
+    //   const email = req.decoded.email;
+    //   const admin = await userCollection.findOne({ email });
+    //   if (admin?.role !== 'admin') {
+    //     return res.status(403).send({message: 'Access denied'})
+    //   }
+
+
+
+    // })
+
+    app.get('/admin/members', verifyToken, async (req, res) => {
+      const members = await userCollection.find({ role: 'member' }).toArray();
+      res.send(members)
+    })
 
 
   } finally {
