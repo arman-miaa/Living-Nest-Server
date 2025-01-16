@@ -209,6 +209,11 @@ app.post("/agreements", verifyToken, async (req, res) => {
       res.send(result);
     });
 
+    // agreement requests
+    app.get('/agreementRequests', verifyToken, async (req, res) => {
+      const result = await agreementtCollection.find().toArray();
+      res.send(result)
+    })
 
   } finally {
     // Ensures that the client will close when you finish/error
