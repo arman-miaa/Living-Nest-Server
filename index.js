@@ -131,6 +131,8 @@ async function run() {
 app.post("/agreements", verifyToken, async (req, res) => {
   const agreement = req.body;
   const { userEmail } = req.body;
+  
+ 
 
   agreement.date = new Date();
   const existingAgreement = await agreementtCollection.findOne({
@@ -174,7 +176,7 @@ app.post("/agreements", verifyToken, async (req, res) => {
  app.patch("/update-userRole/:userId", async (req, res) => {
    try {
      const { userId } = req.params; 
-     console.log("User ID:", userId); 
+    //  console.log("User ID:", userId); 
 
     
      const query = { _id: new ObjectId(userId) }; 
@@ -203,6 +205,12 @@ app.post("/agreements", verifyToken, async (req, res) => {
     
     // announcement APIs
 
+
+    app.get('/announcements', verifyToken, async (req, res) => {
+      const result = await announcementsCollection.find().toArray();
+      res.send(result);
+    })
+
     app.post("/announcements", verifyToken, async (req, res) => {
       const announcement = req.body;
       const result = await announcementsCollection.insertOne(announcement);
@@ -211,9 +219,63 @@ app.post("/agreements", verifyToken, async (req, res) => {
 
     // agreement requests
     app.get('/agreementRequests', verifyToken, async (req, res) => {
-      const result = await agreementtCollection.find().toArray();
+      const query = { status: 'pending' };
+      const result = await agreementtCollection.find(query).toArray();
       res.send(result)
     })
+
+    // agreement request accept
+
+    app.patch("/acceptUser/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      
+      // console.log(id);
+
+
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "checked ",
+        },
+      };
+
+      const updatedStatus = await agreementtCollection.updateOne(query, updateDoc);
+
+      const agreement = await agreementtCollection.findOne(query);
+      
+      const userQuery = { email: agreement.userEmail };
+
+      const updatedRole = {
+        $set: {
+          role: 'member',
+        }
+      }
+
+      const updatedUserRole = await userCollection.updateOne(userQuery,updatedRole)
+
+      // const apartmentDelete = await agreementtCollection.deleteOne(query);
+
+      res.send({updatedStatus,updatedUserRole})
+
+    });
+
+
+    // agreement rejected api
+
+    app.patch('/rejectedUser/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "checked ",
+        },
+      };
+
+      const updatedStatus = await agreementtCollection.updateOne(query, updateDoc);
+res.send(updatedStatus)
+    })
+
+
 
   } finally {
     // Ensures that the client will close when you finish/error
