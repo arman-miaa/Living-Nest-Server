@@ -29,29 +29,6 @@ app.use(express.json());
       });
 };
     
-// admin middleware
-
-const verifyAdmin = async (req, res, next) => {
-  const email = req.user?.email;
-  const query = { email };
-  const result = await userCollection.findOne(query);
-  if (!result || result?.role !== 'admin') {
-    return res
-      .status(403)
-      .send({ message: "Forbidden Access! Admin Only Actions!" });
-  }
-  next();
-}
-
-const verifyMember = async (req, res, next) => {
-  const email = req.user?.email;
-  const query = { email };
-  const result = await userCollection.findOne(query);
-  if (!result || result?.role !== 'member') {
-    return res.status(403).send({message: 'Forbidden Access! Member Only Actions!'})
-  }
-  next();
-}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.7argw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -75,9 +52,7 @@ async function run() {
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
 
-    const userCollection = client
-      .db("apartmentDB")
-      .collection("users");
+    const userCollection = client.db("apartmentDB").collection("users");
     const apartmentCollection = client
       .db("apartmentDB")
       .collection("apartments");
@@ -87,12 +62,42 @@ async function run() {
     const announcementsCollection = client
       .db("apartmentDB")
       .collection("announcements");
-    const couponsCollection = client
-      .db("apartmentDB")
-      .collection("coupons");
+    const couponsCollection = client.db("apartmentDB").collection("coupons");
 
-    
-    
+    // admin middleware
+
+    const verifyAdmin = async (req, res, next) => {
+      try {
+        const email = req.user?.email;
+        const query = { email };
+        console.log(email);
+        const result = await userCollection.findOne(query);
+        console.log(email);
+        if (!result || result?.role !== "admin") {
+          return res
+            .status(403)
+            .send({ message: "Forbidden Access! Admin Only Actions!" });
+        }
+
+        next();
+      } catch (error) {
+        console.error("Error verifying admin:", error);
+        res.status(500).send({ message: "Internal server error" });
+      }
+    };
+
+    const verifyMember = async (req, res, next) => {
+      const email = req.user?.email;
+      const query = { email };
+      const result = await userCollection.findOne(query);
+      if (!result || result?.role !== "member") {
+        return res
+          .status(403)
+          .send({ message: "Forbidden Access! Member Only Actions!" });
+      }
+      next();
+    };
+
     // jwt related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -102,15 +107,14 @@ async function run() {
       res.send({ token });
     });
 
-
     // save or update user data on mongodb
-    app.post('/user/:email', async (req, res) => {
+    app.post("/user/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email };
       const user = req.body;
       // console.log('query email', query, 'user data', user);
 
-      const isExist = await userCollection.findOne(query)
+      const isExist = await userCollection.findOne(query);
       if (isExist) {
         return res.send(isExist);
       }
@@ -120,10 +124,8 @@ async function run() {
         role: "user",
         timestamp: Date.now(),
       });
-      res.send(result)
-
-    })
-
+      res.send(result);
+    });
 
     // get user role
     // app.get('/user/role/:email', async (req, res) => {
@@ -142,7 +144,6 @@ async function run() {
       res.send({ role: result.role });
     });
 
-
     app.get("/apartments", async (req, res) => {
       const result = await apartmentCollection.find().toArray();
       res.send(result);
@@ -150,39 +151,35 @@ async function run() {
 
     // agreements
 
-    app.get('/agreement/:email', async (req, res) => {
+    app.get("/agreement/:email", async (req, res) => {
       const { email } = req.params.email;
-      const query = {email: email}
+      const query = { email: email };
       const result = await agreementtCollection.findOne(query);
       res.send(result);
-    })
+    });
 
-app.post("/agreements", verifyToken, async (req, res) => {
-  const agreement = req.body;
-  const { userEmail } = req.body;
-  
- 
+    app.post("/agreements", verifyToken, async (req, res) => {
+      const agreement = req.body;
+      const { userEmail } = req.body;
 
-  agreement.date = new Date();
-  const existingAgreement = await agreementtCollection.findOne({
-    userEmail: userEmail,
-  });
+      agreement.date = new Date();
+      const existingAgreement = await agreementtCollection.findOne({
+        userEmail: userEmail,
+      });
 
-  if (existingAgreement) {
-    return res
-      .status(400)
-      .send({ message: "You have already applied for an apartment" });
-  }
+      if (existingAgreement) {
+        return res
+          .status(400)
+          .send({ message: "You have already applied for an apartment" });
+      }
 
-  const result = await agreementtCollection.insertOne(agreement);
-  res.send(result);
-});
-
+      const result = await agreementtCollection.insertOne(agreement);
+      res.send(result);
+    });
 
     // admin stats
 
     // app.get('/admin/stats', verifyToken, async (req, res) => {
-
 
     //   const email = req.user.email;
     //   const admin = await userCollection.findOne({ email });
@@ -190,55 +187,48 @@ app.post("/agreements", verifyToken, async (req, res) => {
     //     return res.status(403).send({message: 'Access denied'})
     //   }
 
-
-
     // })
 
-    app.get('/admin/members', verifyToken, async (req, res) => {
-      const members = await userCollection.find({ role: 'member' }).toArray();
-      res.send(members)
-    })
+    app.get("/admin/members", verifyToken, async (req, res) => {
+      const members = await userCollection.find({ role: "member" }).toArray();
+      res.send(members);
+    });
 
     // update user role
 
+    app.patch("/update-userRole/:userId", async (req, res) => {
+      try {
+        const { userId } = req.params;
+        //  console.log("User ID:", userId);
 
- app.patch("/update-userRole/:userId", async (req, res) => {
-   try {
-     const { userId } = req.params; 
-    //  console.log("User ID:", userId); 
+        const query = { _id: new ObjectId(userId) };
+        const updateDoc = {
+          $set: {
+            role: "user",
+          },
+        };
 
-    
-     const query = { _id: new ObjectId(userId) }; 
-     const updateDoc = {
-       $set: {
-         role: "user", 
-       },
-     };
+        const result = await userCollection.updateOne(query, updateDoc);
 
-    
-     const result = await userCollection.updateOne(query, updateDoc);
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ message: "User not found" });
+        }
 
-     if (result.matchedCount === 0) {
-       return res.status(404).send({ message: "User not found" }); 
-     }
+        res
+          .status(200)
+          .send({ message: "User role updated successfully", result });
+      } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
 
-     res
-       .status(200)
-       .send({ message: "User role updated successfully", result });
-   } catch (error) {
-     console.error("Error updating user role:", error);
-     res.status(500).send({ message: "Server error" });
-   }
- });
-    
-    
     // announcement APIs
 
-
-    app.get('/announcements', verifyToken, async (req, res) => {
+    app.get("/announcements", verifyToken, async (req, res) => {
       const result = await announcementsCollection.find().toArray();
       res.send(result);
-    })
+    });
 
     app.post("/announcements", verifyToken, async (req, res) => {
       const announcement = req.body;
@@ -247,19 +237,18 @@ app.post("/agreements", verifyToken, async (req, res) => {
     });
 
     // agreement requests
-    app.get('/agreementRequests', verifyToken, async (req, res) => {
-      const query = { status: 'pending' };
+    app.get("/agreementRequests", verifyToken, async (req, res) => {
+      const query = { status: "pending" };
       const result = await agreementtCollection.find(query).toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // agreement request accept
 
     app.patch("/acceptUser/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
-      
-      // console.log(id);
 
+      // console.log(id);
 
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -268,30 +257,34 @@ app.post("/agreements", verifyToken, async (req, res) => {
         },
       };
 
-      const updatedStatus = await agreementtCollection.updateOne(query, updateDoc);
+      const updatedStatus = await agreementtCollection.updateOne(
+        query,
+        updateDoc
+      );
 
       const agreement = await agreementtCollection.findOne(query);
-      
+
       const userQuery = { email: agreement.userEmail };
 
       const updatedRole = {
         $set: {
-          role: 'member',
-        }
-      }
+          role: "member",
+        },
+      };
 
-      const updatedUserRole = await userCollection.updateOne(userQuery,updatedRole)
+      const updatedUserRole = await userCollection.updateOne(
+        userQuery,
+        updatedRole
+      );
 
       // const apartmentDelete = await agreementtCollection.deleteOne(query);
 
-      res.send({updatedStatus,updatedUserRole})
-
+      res.send({ updatedStatus, updatedUserRole });
     });
-
 
     // agreement rejected api
 
-    app.patch('/rejectedUser/:id', verifyToken, async (req, res) => {
+    app.patch("/rejectedUser/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -300,24 +293,42 @@ app.post("/agreements", verifyToken, async (req, res) => {
         },
       };
 
-      const updatedStatus = await agreementtCollection.updateOne(query, updateDoc);
-res.send(updatedStatus)
-    })
+      const updatedStatus = await agreementtCollection.updateOne(
+        query,
+        updateDoc
+      );
+      res.send(updatedStatus);
+    });
 
     // coupons api
 
-    app.get('/coupons', verifyToken, async (req, res) => {
+    app.get("/coupons", verifyToken, verifyAdmin, async (req, res) => {
       const result = await couponsCollection.find().toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
+
+    // update availity of coupons
+    app.patch("/coupons/:id", verifyToken, async (req, res) => {
+      const { id } = req.params;
+      const { available } = req.body;
+
+      const result = await couponsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { available } }
+      );
+
+      if (result.modifiedCount > 0) {
+        res.send({ success: true, message: "Coupon availability updated." });
+      } else {
+        res.status(400).send({ success: false, message: "Failed to update." });
+      }
+    });
 
     app.post("/coupons", verifyToken, async (req, res) => {
       const coupon = req.body;
       const result = await couponsCollection.insertOne(coupon);
       res.send(result);
     });
-
-
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
