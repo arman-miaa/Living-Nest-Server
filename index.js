@@ -12,7 +12,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-
+// verify token middleware
     const verifyToken = (req, res, next) => {
       // console.log("inside verify token", req.headers.authorization);
       if (!req.headers.authorization) {
@@ -23,11 +23,35 @@ app.use(express.json());
         if (err) {
           return res.status(401).send({ message: "unauthorized access" });
         }
-        req.decoded = decoded;
-        // console.log(req.decoded.email);
+        req.user = decoded;
+        // console.log(req.user.email);
         next();
       });
-    };
+};
+    
+// admin middleware
+
+const verifyAdmin = async (req, res, next) => {
+  const email = req.user?.email;
+  const query = { email };
+  const result = await userCollection.findOne(query);
+  if (!result || result?.role !== 'admin') {
+    return res
+      .status(403)
+      .send({ message: "Forbidden Access! Admin Only Actions!" });
+  }
+  next();
+}
+
+const verifyMember = async (req, res, next) => {
+  const email = req.user?.email;
+  const query = { email };
+  const result = await userCollection.findOne(query);
+  if (!result || result?.role !== 'member') {
+    return res.status(403).send({message: 'Forbidden Access! Member Only Actions!'})
+  }
+  next();
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.7argw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -63,7 +87,12 @@ async function run() {
     const announcementsCollection = client
       .db("apartmentDB")
       .collection("announcements");
+    const couponsCollection = client
+      .db("apartmentDB")
+      .collection("coupons");
 
+    
+    
     // jwt related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
@@ -155,7 +184,7 @@ app.post("/agreements", verifyToken, async (req, res) => {
     // app.get('/admin/stats', verifyToken, async (req, res) => {
 
 
-    //   const email = req.decoded.email;
+    //   const email = req.user.email;
     //   const admin = await userCollection.findOne({ email });
     //   if (admin?.role !== 'admin') {
     //     return res.status(403).send({message: 'Access denied'})
@@ -275,6 +304,18 @@ app.post("/agreements", verifyToken, async (req, res) => {
 res.send(updatedStatus)
     })
 
+    // coupons api
+
+    app.get('/coupons', verifyToken, async (req, res) => {
+      const result = await couponsCollection.find().toArray();
+      res.send(result)
+    })
+
+    app.post("/coupons", verifyToken, async (req, res) => {
+      const coupon = req.body;
+      const result = await couponsCollection.insertOne(coupon);
+      res.send(result);
+    });
 
 
   } finally {
