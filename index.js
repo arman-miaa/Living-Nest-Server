@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const jwt = require("jsonwebtoken");
- const { ObjectId } = require("mongodb");
+const { ObjectId } = require("mongodb");
 
 require("dotenv").config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
@@ -14,23 +14,21 @@ app.use(cors());
 app.use(express.json());
 
 // verify token middleware
-    const verifyToken = (req, res, next) => {
-      // console.log("inside verify token", req.headers.authorization);
-      if (!req.headers.authorization) {
-        return res.status(401).send({ message: "unauthorized access" });
-      }
-      const token = req.headers.authorization.split(" ")[1];
-      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-          return res.status(401).send({ message: "unauthorized access" });
-        }
-        req.user = decoded;
-        // console.log(req.user.email);
-        next();
-      });
+const verifyToken = (req, res, next) => {
+  // console.log("inside verify token", req.headers.authorization);
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = req.headers.authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+    // console.log(req.user.email);
+    next();
+  });
 };
-    
-
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.7argw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -65,7 +63,6 @@ async function run() {
       .collection("announcements");
     const couponsCollection = client.db("apartmentDB").collection("coupons");
     const paymentCollection = client.db("apartmentDB").collection("payments");
-
 
     // admin middleware
 
@@ -115,7 +112,7 @@ async function run() {
       console.log(req.body);
       const { rent } = req.body;
       const amount = parseInt(rent * 100);
-      // console.log(amount,'amount inside intent');
+      console.log(amount, "amount inside intent");
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -127,14 +124,135 @@ async function run() {
       });
     });
 
+    app.get("/payment/:email", async (req, res) => {
+      const email = req.params.email;
+      console.log(email);
+      const query = { email: email };
 
-    
-    app.post('/payment', async (req, res) => {
-      const payment = req.body;
-      const result = await paymentCollection.insertOne(payment);
+      const result = await paymentCollection.findOne(query);
+
       res.send(result);
-})
+    });
 
+    app.post("/payment", async (req, res) => {
+      const payment = req.body;
+
+      const { apartmentId } = payment;
+
+      console.log(apartmentId, payment);
+
+      const result = await paymentCollection.insertOne(payment);
+
+   
+
+      res.send(result);
+    });
+
+app.patch("/updateApartment/:id", async (req, res) => {
+  const id = req.params.id; // Get ID from URL parameter
+  const query = { _id: new ObjectId(id) }; // Convert to ObjectId for MongoDB query
+
+  const updateDoc = {
+    $set: { availability: "unavailable" }, // Update availability to "unavailable"
+  };
+
+  try {
+    // Perform the update operation
+    const result = await apartmentCollection.updateOne(query, updateDoc);
+
+    if (result.modifiedCount === 0) {
+      // If no document was modified, return an appropriate response
+      return res.status(404).send({
+        success: false,
+        message: "No apartment found or already unavailable.",
+      });
+    }
+
+    // Send the successful response
+    res.status(200).send({
+      success: true,
+      message: "Apartment updated successfully.",
+      result,
+    });
+
+    console.log("Updated apartment ID:", id); // Log the ID for debugging
+  } catch (error) {
+    // Handle any errors during the update process
+    console.error("Error updating apartment:", error);
+
+    res.status(500).send({
+      success: false,
+      message: "Failed to update apartment.",
+      error: error.message,
+    });
+  }
+});
+
+
+    // const { ObjectId } = require("mongodb"); // ObjectId ইনপোর্ট করা
+
+    // app.patch("/payment", async (req, res) => {
+    //   const payment = req.body; // পেমেন্ট ডেটা
+    //   const { apartmentId } = payment; // অ্যাপার্টমেন্ট আইডি
+
+    //   try {
+    //     // Step 1: পেমেন্ট ডেটা ইনসার্ট করা
+    //     const result = await paymentCollection.insertOne(payment);
+    //     if (!result.insertedId) {
+    //       return res.status(500).send({
+    //         success: false,
+    //         message: "Failed to insert payment data.",
+    //       });
+    //     }
+
+    //     // Step 2: অ্যাপার্টমেন্টের অ্যাভেইলেবিলিটি চেক করা
+    //    const apartment = await apartmentCollection.findOne({
+    //      _id: ObjectId.isValid(apartmentId)
+    //        ? new ObjectId(apartmentId)
+    //        : apartmentId,
+    //    });
+
+    //     if (!apartment) {
+    //       return res.status(404).send({
+    //         success: false,
+    //         message: "Apartment not found.",
+    //       });
+    //     }
+
+    //     if (apartment.availability === "unavailable") {
+    //       return res.status(400).send({
+    //         success: false,
+    //         message: "This apartment is already rented.",
+    //       });
+    //     }
+
+    //     // Step 3: অ্যাপার্টমেন্ট `availability` আপডেট করা
+    //     const updateApartment = await apartmentCollection.updateOne(
+    //       { _id: new ObjectId(apartmentId) }, // সঠিকভাবে ObjectId রূপান্তর
+    //       { $set: { availability: "unavailable" } }
+    //     );
+
+    //     if (updateApartment.modifiedCount === 0) {
+    //       return res.status(500).send({
+    //         success: false,
+    //         message: "Failed to update apartment availability.",
+    //       });
+    //     }
+
+    //     // সফল রেসপন্স
+    //     res.status(200).send({
+    //       success: true,
+    //       message: "Payment successful, and apartment availability updated.",
+    //       paymentId: result.insertedId,
+    //     });
+    //   } catch (error) {
+    //     console.error("Error in payment process:", error);
+    //     res.status(500).send({
+    //       success: false,
+    //       message: "An error occurred during the payment process.",
+    //     });
+    //   }
+    // });
 
     // save or update user data on mongodb
     app.post("/user/:email", async (req, res) => {
