@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
  const { ObjectId } = require("mongodb");
 
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -45,12 +46,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
     // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-    // console.log(
-    //   "Pinged your deployment. You successfully connected to MongoDB!"
-    // );
+    await client.db("admin").command({ ping: 1 });
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB!"
+    );
 
     const userCollection = client.db("apartmentDB").collection("users");
     const apartmentCollection = client
@@ -63,6 +64,8 @@ async function run() {
       .db("apartmentDB")
       .collection("announcements");
     const couponsCollection = client.db("apartmentDB").collection("coupons");
+    const paymentCollection = client.db("apartmentDB").collection("payments");
+
 
     // admin middleware
 
@@ -106,6 +109,32 @@ async function run() {
       });
       res.send({ token });
     });
+
+    // payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      console.log(req.body);
+      const { rent } = req.body;
+      const amount = parseInt(rent * 100);
+      // console.log(amount,'amount inside intent');
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+
+    
+    app.post('/payment', async (req, res) => {
+      const payment = req.body;
+      const result = await paymentCollection.insertOne(payment);
+      res.send(result);
+})
+
 
     // save or update user data on mongodb
     app.post("/user/:email", async (req, res) => {
@@ -152,7 +181,7 @@ async function run() {
     // agreements
 
     app.get("/agreement/:email", async (req, res) => {
-      const  email  = req.params.email;
+      const email = req.params.email;
       const query = { userEmail: email };
       const result = await agreementtCollection.findOne(query);
       res.send(result);
