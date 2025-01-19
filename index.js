@@ -303,8 +303,37 @@ app.patch("/updateApartment/:id", async (req, res) => {
        // Count the total number of apartments
        const totalApartments = await apartmentCollection.countDocuments();
 
+       // available apartments
+
+       const availableApartments = await apartmentCollection.countDocuments({
+         availability: 'available',
+       })
+       const availablePercentage = (availableApartments / totalApartments) * 100;
+
+       // unavailable apartments
+       const unavailableApartments = await apartmentCollection.countDocuments({
+         availability: 'unavailable',
+       })
+
+       const unavailablePercentage = (unavailableApartments / totalApartments) * 100;
+
+       // total users
+       const totalUsers = await userCollection.countDocuments({
+         role: 'user',
+       })
+       // total member
+       const totalMembers = await userCollection.countDocuments({
+         role: 'member',
+       })
+
        // Send the count as the response
-       res.send({ total: totalApartments });
+       res.send({
+         total: totalApartments,
+         available: availablePercentage.toFixed(2),
+         unavailable: unavailablePercentage.toFixed(2),
+         totalUsers: totalUsers,
+         totalMembers: totalMembers,
+        });
      } catch (error) {
        console.error("Error fetching total apartments:", error);
        res
