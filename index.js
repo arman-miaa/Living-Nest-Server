@@ -291,10 +291,33 @@ app.patch("/updateApartment/:id", async (req, res) => {
       res.send({ role: result.role });
     });
 
-    app.get("/apartments", async (req, res) => {
-      const result = await apartmentCollection.find().toArray();
-      res.send(result);
-    });
+   app.get("/apartments", async (req, res) => {
+     const page = parseInt(req.query.page) || 0;
+     const limit = parseInt(req.query.limit) || 6;
+
+     try {
+       const total = await apartmentCollection.countDocuments();
+       const apartments = await apartmentCollection
+         .find()
+         .skip(page * limit)
+         .limit(limit)
+         .toArray();
+
+       res.send({ total, apartments });
+     } catch (error) {
+       res
+         .status(500)
+         .send({ success: false, message: "Failed to fetch apartments." });
+     }
+   });
+
+    
+    
+    // app.post('/apartments', async (req, res) => {
+    //   const apartment = req.body;
+    //   const result = await apartmentCollection.insertMany(apartment);
+    //   res.send(result)
+    // })
 
     // admin info
 
