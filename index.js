@@ -143,51 +143,48 @@ async function run() {
 
       const result = await paymentCollection.insertOne(payment);
 
-   
-
       res.send(result);
     });
 
-app.patch("/updateApartment/:id", async (req, res) => {
-  const id = req.params.id; // Get ID from URL parameter
-  const query = { _id: new ObjectId(id) }; // Convert to ObjectId for MongoDB query
+    app.patch("/updateApartment/:id", async (req, res) => {
+      const id = req.params.id; // Get ID from URL parameter
+      const query = { _id: new ObjectId(id) }; // Convert to ObjectId for MongoDB query
 
-  const updateDoc = {
-    $set: { availability: "unavailable" }, // Update availability to "unavailable"
-  };
+      const updateDoc = {
+        $set: { availability: "unavailable" }, // Update availability to "unavailable"
+      };
 
-  try {
-    // Perform the update operation
-    const result = await apartmentCollection.updateOne(query, updateDoc);
+      try {
+        // Perform the update operation
+        const result = await apartmentCollection.updateOne(query, updateDoc);
 
-    if (result.modifiedCount === 0) {
-      // If no document was modified, return an appropriate response
-      return res.status(404).send({
-        success: false,
-        message: "No apartment found or already unavailable.",
-      });
-    }
+        if (result.modifiedCount === 0) {
+          // If no document was modified, return an appropriate response
+          return res.status(404).send({
+            success: false,
+            message: "No apartment found or already unavailable.",
+          });
+        }
 
-    // Send the successful response
-    res.status(200).send({
-      success: true,
-      message: "Apartment updated successfully.",
-      result,
+        // Send the successful response
+        res.status(200).send({
+          success: true,
+          message: "Apartment updated successfully.",
+          result,
+        });
+
+        console.log("Updated apartment ID:", id); // Log the ID for debugging
+      } catch (error) {
+        // Handle any errors during the update process
+        console.error("Error updating apartment:", error);
+
+        res.status(500).send({
+          success: false,
+          message: "Failed to update apartment.",
+          error: error.message,
+        });
+      }
     });
-
-    console.log("Updated apartment ID:", id); // Log the ID for debugging
-  } catch (error) {
-    // Handle any errors during the update process
-    console.error("Error updating apartment:", error);
-
-    res.status(500).send({
-      success: false,
-      message: "Failed to update apartment.",
-      error: error.message,
-    });
-  }
-});
-
 
     // const { ObjectId } = require("mongodb"); // ObjectId ইনপোর্ট করা
 
@@ -291,57 +288,50 @@ app.patch("/updateApartment/:id", async (req, res) => {
       res.send({ role: result.role });
     });
 
-  //   app.get("/apartments", async (req, res) => {
-  //    console.log(req.body);
-  //    const page = parseInt(req.query.page) || 0;
-  //    const limit = parseInt(req.query.limit) || 6;
+    //   app.get("/apartments", async (req, res) => {
+    //    console.log(req.body);
+    //    const page = parseInt(req.query.page) || 0;
+    //    const limit = parseInt(req.query.limit) || 6;
 
-  //    try {
-  //      const total = await apartmentCollection.countDocuments();
-  //      const apartments = await apartmentCollection
-  //        .find()
-  //        .skip(page * limit)
-  //        .limit(limit)
-  //        .toArray();
+    //    try {
+    //      const total = await apartmentCollection.countDocuments();
+    //      const apartments = await apartmentCollection
+    //        .find()
+    //        .skip(page * limit)
+    //        .limit(limit)
+    //        .toArray();
 
-  //      res.send({ total, apartments });
-  //    } catch (error) {
-  //      res
-  //        .status(500)
-  //        .send({ success: false, message: "Failed to fetch apartments." });
-  //    }
+    //      res.send({ total, apartments });
+    //    } catch (error) {
+    //      res
+    //        .status(500)
+    //        .send({ success: false, message: "Failed to fetch apartments." });
+    //    }
     //  });
-    
 
     app.get("/apartments", async (req, res) => {
       try {
-        // Log the request query parameters
         console.log(req.query);
 
-        const page = parseInt(req.query.page) || 0; // Default page is 0
-        const limit = parseInt(req.query.limit) || 6; // Default limit is 6
-        const minRent = parseInt(req.query.minRent) || 0; // Default minRent is 0
-        const maxRent = parseInt(req.query.maxRent) || Infinity; // Default maxRent is Infinity
+        const page = parseInt(req.query.page) || 0;
+        const limit = parseInt(req.query.limit) || 6;
+        const minRent = parseInt(req.query.minRent) || 0;
+        const maxRent = parseInt(req.query.maxRent) || Infinity;
 
-        // Build the filter object to be applied based on rent values
         const filter = {};
 
-        // Only apply the rent filter if either minRent or maxRent is provided
         if (minRent > 0 || maxRent < Infinity) {
           filter.rent = { $gte: minRent, $lte: maxRent };
         }
 
-        // Get the total number of apartments matching the filter (or all apartments if no filter)
         const total = await apartmentCollection.countDocuments(filter);
 
-        // Fetch apartments based on the filter and pagination
         const apartments = await apartmentCollection
           .find(filter)
-          .skip(page * limit) // Apply pagination
+          .skip(page * limit)
           .limit(limit)
           .toArray();
 
-        // Send the response with the total count and apartments list
         res.send({ success: true, total, apartments });
       } catch (error) {
         console.error("Error fetching apartments:", error);
@@ -351,7 +341,6 @@ app.patch("/updateApartment/:id", async (req, res) => {
       }
     });
 
-    
     // app.post('/apartments', async (req, res) => {
     //   const apartment = req.body;
     //   const result = await apartmentCollection.insertMany(apartment);
@@ -360,53 +349,52 @@ app.patch("/updateApartment/:id", async (req, res) => {
 
     // admin info
 
-   app.get("/admin/info", verifyToken, verifyAdmin, async (req, res) => {
-     try {
-       // Count the total number of apartments
-       const totalApartments = await apartmentCollection.countDocuments();
+    app.get("/admin/info", verifyToken, verifyAdmin, async (req, res) => {
+      try {
+        // Count the total number of apartments
+        const totalApartments = await apartmentCollection.countDocuments();
 
-       // available apartments
+        // available apartments
 
-       const availableApartments = await apartmentCollection.countDocuments({
-         availability: 'available',
-       })
-       const availablePercentage = (availableApartments / totalApartments) * 100;
-
-       // unavailable apartments
-       const unavailableApartments = await apartmentCollection.countDocuments({
-         availability: 'unavailable',
-       })
-
-       const unavailablePercentage = (unavailableApartments / totalApartments) * 100;
-
-       // total users
-       const totalUsers = await userCollection.countDocuments({
-         role: 'user',
-       })
-       // total member
-       const totalMembers = await userCollection.countDocuments({
-         role: 'member',
-       })
-
-       // Send the count as the response
-       res.send({
-         total: totalApartments,
-         available: availablePercentage.toFixed(2),
-         unavailable: unavailablePercentage.toFixed(2),
-         totalUsers: totalUsers,
-         totalMembers: totalMembers,
+        const availableApartments = await apartmentCollection.countDocuments({
+          availability: "available",
         });
-     } catch (error) {
-       console.error("Error fetching total apartments:", error);
-       res
-         .status(500)
-         .send({
-           success: false,
-           message: "Failed to fetch total apartments.",
-         });
-     }
-   });
+        const availablePercentage =
+          (availableApartments / totalApartments) * 100;
 
+        // unavailable apartments
+        const unavailableApartments = await apartmentCollection.countDocuments({
+          availability: "unavailable",
+        });
+
+        const unavailablePercentage =
+          (unavailableApartments / totalApartments) * 100;
+
+        // total users
+        const totalUsers = await userCollection.countDocuments({
+          role: "user",
+        });
+        // total member
+        const totalMembers = await userCollection.countDocuments({
+          role: "member",
+        });
+
+        // Send the count as the response
+        res.send({
+          total: totalApartments,
+          available: availablePercentage.toFixed(2),
+          unavailable: unavailablePercentage.toFixed(2),
+          totalUsers: totalUsers,
+          totalMembers: totalMembers,
+        });
+      } catch (error) {
+        console.error("Error fetching total apartments:", error);
+        res.status(500).send({
+          success: false,
+          message: "Failed to fetch total apartments.",
+        });
+      }
+    });
 
     // agreements
 
@@ -561,13 +549,13 @@ app.patch("/updateApartment/:id", async (req, res) => {
 
     // coupons api
 
-    app.get("/coupons", verifyToken, verifyAdmin, async (req, res) => {
+    app.get("/coupons", async (req, res) => {
       const result = await couponsCollection.find().toArray();
       res.send(result);
     });
 
     // update availity of coupons
-    app.patch("/coupons/:id", verifyToken, async (req, res) => {
+    app.patch("/coupons/:id", verifyToken, verifyAdmin, async (req, res) => {
       const { id } = req.params;
       const { available } = req.body;
 
@@ -588,6 +576,46 @@ app.patch("/updateApartment/:id", async (req, res) => {
       const result = await couponsCollection.insertOne(coupon);
       res.send(result);
     });
+
+    /// validation coupon
+    // API Endpoint: Validate a Coupon
+    app.get("/coupons/:code", async (req, res) => {
+      try {
+        const { code } = req.params;
+        console.log(code);
+
+        // Find the coupon by its code
+        const coupon = await couponsCollection.findOne({ code });
+
+        if (!coupon) {
+          return res.status(404).json({
+            message: "Coupon not found",
+            available: false,
+          });
+        }
+
+        if (!coupon.available) {
+          return res.status(400).json({
+            message: "Coupon is unavailable",
+            available: false,
+          });
+        }
+
+        // Respond with coupon details if valid
+        res.status(200).json({
+          code: coupon.code,
+          percentage: coupon.percentage,
+          description: coupon.description,
+          available: coupon.available,
+        });
+      } catch (error) {
+        console.error("Error validating coupon:", error);
+        res.status(500).json({
+          message: "Internal server error",
+        });
+      }
+    });
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
