@@ -291,27 +291,66 @@ app.patch("/updateApartment/:id", async (req, res) => {
       res.send({ role: result.role });
     });
 
-   app.get("/apartments", async (req, res) => {
-     const page = parseInt(req.query.page) || 0;
-     const limit = parseInt(req.query.limit) || 6;
+  //   app.get("/apartments", async (req, res) => {
+  //    console.log(req.body);
+  //    const page = parseInt(req.query.page) || 0;
+  //    const limit = parseInt(req.query.limit) || 6;
 
-     try {
-       const total = await apartmentCollection.countDocuments();
-       const apartments = await apartmentCollection
-         .find()
-         .skip(page * limit)
-         .limit(limit)
-         .toArray();
+  //    try {
+  //      const total = await apartmentCollection.countDocuments();
+  //      const apartments = await apartmentCollection
+  //        .find()
+  //        .skip(page * limit)
+  //        .limit(limit)
+  //        .toArray();
 
-       res.send({ total, apartments });
-     } catch (error) {
-       res
-         .status(500)
-         .send({ success: false, message: "Failed to fetch apartments." });
-     }
-   });
-
+  //      res.send({ total, apartments });
+  //    } catch (error) {
+  //      res
+  //        .status(500)
+  //        .send({ success: false, message: "Failed to fetch apartments." });
+  //    }
+    //  });
     
+
+    app.get("/apartments", async (req, res) => {
+      try {
+        // Log the request query parameters
+        console.log(req.query);
+
+        const page = parseInt(req.query.page) || 0; // Default page is 0
+        const limit = parseInt(req.query.limit) || 6; // Default limit is 6
+        const minRent = parseInt(req.query.minRent) || 0; // Default minRent is 0
+        const maxRent = parseInt(req.query.maxRent) || Infinity; // Default maxRent is Infinity
+
+        // Build the filter object to be applied based on rent values
+        const filter = {};
+
+        // Only apply the rent filter if either minRent or maxRent is provided
+        if (minRent > 0 || maxRent < Infinity) {
+          filter.rent = { $gte: minRent, $lte: maxRent };
+        }
+
+        // Get the total number of apartments matching the filter (or all apartments if no filter)
+        const total = await apartmentCollection.countDocuments(filter);
+
+        // Fetch apartments based on the filter and pagination
+        const apartments = await apartmentCollection
+          .find(filter)
+          .skip(page * limit) // Apply pagination
+          .limit(limit)
+          .toArray();
+
+        // Send the response with the total count and apartments list
+        res.send({ success: true, total, apartments });
+      } catch (error) {
+        console.error("Error fetching apartments:", error);
+        res
+          .status(500)
+          .send({ success: false, message: "Failed to fetch apartments." });
+      }
+    });
+
     
     // app.post('/apartments', async (req, res) => {
     //   const apartment = req.body;
