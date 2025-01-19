@@ -296,6 +296,27 @@ app.patch("/updateApartment/:id", async (req, res) => {
       res.send(result);
     });
 
+    // admin info
+
+   app.get("/admin/info", verifyToken, verifyAdmin, async (req, res) => {
+     try {
+       // Count the total number of apartments
+       const totalApartments = await apartmentCollection.countDocuments();
+
+       // Send the count as the response
+       res.send({ total: totalApartments });
+     } catch (error) {
+       console.error("Error fetching total apartments:", error);
+       res
+         .status(500)
+         .send({
+           success: false,
+           message: "Failed to fetch total apartments.",
+         });
+     }
+   });
+
+
     // agreements
 
     app.get("/agreement/:email", async (req, res) => {
