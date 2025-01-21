@@ -44,12 +44,12 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
 
     const userCollection = client.db("apartmentDB").collection("users");
     const apartmentCollection = client
@@ -477,11 +477,21 @@ async function run() {
       res.send(result);
     });
 
+    // app.post("/announcements", verifyToken, async (req, res) => {
+    //   const announcement = req.body;
+    //   const result = await announcementsCollection.insertOne(announcement);
+    //   res.send(result);
+    // });
     app.post("/announcements", verifyToken, async (req, res) => {
       const announcement = req.body;
+
+      // Add current date to the announcement
+      announcement.date = new Date().toISOString();
+
       const result = await announcementsCollection.insertOne(announcement);
       res.send(result);
     });
+
 
     // agreement requests
     app.get("/agreementRequests", verifyToken, async (req, res) => {
