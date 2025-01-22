@@ -15,7 +15,7 @@ app.use(express.json());
 
 // verify token middleware
 const verifyToken = (req, res, next) => {
-  // console.log("inside verify token", req.headers.authorization);
+
   if (!req.headers.authorization) {
     return res.status(401).send({ message: "unauthorized access" });
   }
@@ -25,7 +25,7 @@ const verifyToken = (req, res, next) => {
       return res.status(401).send({ message: "unauthorized access" });
     }
     req.user = decoded;
-    // console.log(req.user.email);
+  
     next();
   });
 };
@@ -70,9 +70,9 @@ async function run() {
       try {
         const email = req.user?.email;
         const query = { email };
-        console.log(email);
+        
         const result = await userCollection.findOne(query);
-        console.log(email);
+       
         if (!result || result?.role !== "admin") {
           return res
             .status(403)
@@ -109,10 +109,10 @@ async function run() {
 
     // payment intent
     app.post("/create-payment-intent",verifyToken, verifyMember, async (req, res) => {
-      console.log(req.body);
+      
       const { rent } = req.body;
       const amount = parseInt(rent * 100);
-      console.log(amount, "amount inside intent");
+     
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -126,7 +126,7 @@ async function run() {
 
     app.get("/payment/:email", verifyToken, verifyMember, async (req, res) => {
       const email = req.params.email;
-      console.log(email);
+     
       const query = { email: email };
 
       const result = await paymentCollection.findOne(query);
@@ -139,7 +139,7 @@ async function run() {
 
       const { apartmentId } = payment;
 
-      console.log(apartmentId, payment);
+   
 
       const result = await paymentCollection.insertOne(payment);
 
@@ -173,7 +173,7 @@ async function run() {
           result,
         });
 
-        console.log("Updated apartment ID:", id); // Log the ID for debugging
+      
       } catch (error) {
         // Handle any errors during the update process
         console.error("Error updating apartment:", error);
@@ -192,7 +192,7 @@ async function run() {
       const email = req.params.email;
       const query = { email };
       const user = req.body;
-      // console.log('query email', query, 'user data', user);
+   
 
       const isExist = await userCollection.findOne(query);
       if (isExist) {
@@ -223,7 +223,7 @@ async function run() {
 
     app.get("/apartments", verifyToken, verifyAdmin, async (req, res) => {
       try {
-        console.log(req.query);
+       
 
         const page = parseInt(req.query.page) || 0;
         const limit = parseInt(req.query.limit) || 6;
@@ -344,7 +344,7 @@ async function run() {
     app.patch("/update-userRole/:userId", verifyToken, verifyAdmin, async (req, res) => {
       try {
         const { userId } = req.params;
-        //  console.log("User ID:", userId);
+       
 
         const query = { _id: new ObjectId(userId) };
         const updateDoc = {
@@ -399,7 +399,7 @@ async function run() {
     app.patch("/acceptUser/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
 
-      // console.log(id);
+  
 
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -486,7 +486,7 @@ async function run() {
     app.get("/coupons/:code", verifyToken, verifyMember, async (req, res) => {
       try {
         const { code } = req.params;
-        console.log(code);
+        
 
         // Find the coupon by its code
         const coupon = await couponsCollection.findOne({ code });
