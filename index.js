@@ -221,7 +221,7 @@ async function run() {
 
     
 
-    app.get("/apartments", verifyToken, verifyAdmin, async (req, res) => {
+    app.get("/apartments",  async (req, res) => {
       try {
        
 
