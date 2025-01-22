@@ -108,7 +108,7 @@ async function run() {
     });
 
     // payment intent
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/create-payment-intent",verifyToken, verifyMember, async (req, res) => {
       console.log(req.body);
       const { rent } = req.body;
       const amount = parseInt(rent * 100);
@@ -124,7 +124,7 @@ async function run() {
       });
     });
 
-    app.get("/payment/:email", async (req, res) => {
+    app.get("/payment/:email", verifyToken, verifyMember, async (req, res) => {
       const email = req.params.email;
       console.log(email);
       const query = { email: email };
@@ -134,7 +134,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/payment", async (req, res) => {
+    app.post("/payment", verifyToken, verifyMember, async (req, res) => {
       const payment = req.body;
 
       const { apartmentId } = payment;
@@ -146,12 +146,12 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/updateApartment/:id", async (req, res) => {
-      const id = req.params.id; // Get ID from URL parameter
-      const query = { _id: new ObjectId(id) }; // Convert to ObjectId for MongoDB query
+    app.patch("/updateApartment/:id", verifyToken, verifyMember, async (req, res) => {
+      const id = req.params.id; 
+      const query = { _id: new ObjectId(id) }; 
 
       const updateDoc = {
-        $set: { availability: "unavailable" }, // Update availability to "unavailable"
+        $set: { availability: "unavailable" }, 
       };
 
       try {
@@ -186,71 +186,7 @@ async function run() {
       }
     });
 
-    // const { ObjectId } = require("mongodb"); // ObjectId ইনপোর্ট করা
-
-    // app.patch("/payment", async (req, res) => {
-    //   const payment = req.body; // পেমেন্ট ডেটা
-    //   const { apartmentId } = payment; // অ্যাপার্টমেন্ট আইডি
-
-    //   try {
-    //     // Step 1: পেমেন্ট ডেটা ইনসার্ট করা
-    //     const result = await paymentCollection.insertOne(payment);
-    //     if (!result.insertedId) {
-    //       return res.status(500).send({
-    //         success: false,
-    //         message: "Failed to insert payment data.",
-    //       });
-    //     }
-
-    //     // Step 2: অ্যাপার্টমেন্টের অ্যাভেইলেবিলিটি চেক করা
-    //    const apartment = await apartmentCollection.findOne({
-    //      _id: ObjectId.isValid(apartmentId)
-    //        ? new ObjectId(apartmentId)
-    //        : apartmentId,
-    //    });
-
-    //     if (!apartment) {
-    //       return res.status(404).send({
-    //         success: false,
-    //         message: "Apartment not found.",
-    //       });
-    //     }
-
-    //     if (apartment.availability === "unavailable") {
-    //       return res.status(400).send({
-    //         success: false,
-    //         message: "This apartment is already rented.",
-    //       });
-    //     }
-
-    //     // Step 3: অ্যাপার্টমেন্ট `availability` আপডেট করা
-    //     const updateApartment = await apartmentCollection.updateOne(
-    //       { _id: new ObjectId(apartmentId) }, // সঠিকভাবে ObjectId রূপান্তর
-    //       { $set: { availability: "unavailable" } }
-    //     );
-
-    //     if (updateApartment.modifiedCount === 0) {
-    //       return res.status(500).send({
-    //         success: false,
-    //         message: "Failed to update apartment availability.",
-    //       });
-    //     }
-
-    //     // সফল রেসপন্স
-    //     res.status(200).send({
-    //       success: true,
-    //       message: "Payment successful, and apartment availability updated.",
-    //       paymentId: result.insertedId,
-    //     });
-    //   } catch (error) {
-    //     console.error("Error in payment process:", error);
-    //     res.status(500).send({
-    //       success: false,
-    //       message: "An error occurred during the payment process.",
-    //     });
-    //   }
-    // });
-
+    
     // save or update user data on mongodb
     app.post("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -271,13 +207,8 @@ async function run() {
       res.send(result);
     });
 
-    // get user role
-    // app.get('/user/role/:email', async (req, res) => {
-    //   const email = req.params.email;
-    //   const result = await userCollection.findOne({ email });
-    //   res.send({role: result?.role})
-    // })
-    app.get("/user/role/:email", async (req, res) => {
+  
+    app.get("/user/role/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const result = await userCollection.findOne({ email });
 
@@ -288,28 +219,9 @@ async function run() {
       res.send({ role: result.role });
     });
 
-    //   app.get("/apartments", async (req, res) => {
-    //    console.log(req.body);
-    //    const page = parseInt(req.query.page) || 0;
-    //    const limit = parseInt(req.query.limit) || 6;
+    
 
-    //    try {
-    //      const total = await apartmentCollection.countDocuments();
-    //      const apartments = await apartmentCollection
-    //        .find()
-    //        .skip(page * limit)
-    //        .limit(limit)
-    //        .toArray();
-
-    //      res.send({ total, apartments });
-    //    } catch (error) {
-    //      res
-    //        .status(500)
-    //        .send({ success: false, message: "Failed to fetch apartments." });
-    //    }
-    //  });
-
-    app.get("/apartments", async (req, res) => {
+    app.get("/apartments", verifyToken, verifyAdmin, async (req, res) => {
       try {
         console.log(req.query);
 
@@ -341,13 +253,7 @@ async function run() {
       }
     });
 
-    // app.post('/apartments', async (req, res) => {
-    //   const apartment = req.body;
-    //   const result = await apartmentCollection.insertMany(apartment);
-    //   res.send(result)
-    // })
-
-    // admin info
+ 
 
     app.get("/admin/info", verifyToken, verifyAdmin, async (req, res) => {
       try {
@@ -398,14 +304,14 @@ async function run() {
 
     // agreements
 
-    app.get("/agreement/:email", async (req, res) => {
+    app.get("/agreement/:email", verifyToken, verifyMember, async (req, res) => {
       const email = req.params.email;
       const query = { userEmail: email };
       const result = await agreementtCollection.findOne(query);
       res.send(result);
     });
 
-    app.post("/agreements", verifyToken, async (req, res) => {
+    app.post("/agreements", verifyToken, verifyMember, async (req, res) => {
       const agreement = req.body;
       const { userEmail } = req.body;
 
@@ -426,24 +332,16 @@ async function run() {
 
     // admin stats
 
-    // app.get('/admin/stats', verifyToken, async (req, res) => {
+  
 
-    //   const email = req.user.email;
-    //   const admin = await userCollection.findOne({ email });
-    //   if (admin?.role !== 'admin') {
-    //     return res.status(403).send({message: 'Access denied'})
-    //   }
-
-    // })
-
-    app.get("/admin/members", verifyToken, async (req, res) => {
+    app.get("/admin/members", verifyToken, verifyAdmin, async (req, res) => {
       const members = await userCollection.find({ role: "member" }).toArray();
       res.send(members);
     });
 
     // update user role
 
-    app.patch("/update-userRole/:userId", async (req, res) => {
+    app.patch("/update-userRole/:userId", verifyToken, verifyAdmin, async (req, res) => {
       try {
         const { userId } = req.params;
         //  console.log("User ID:", userId);
@@ -477,12 +375,8 @@ async function run() {
       res.send(result);
     });
 
-    // app.post("/announcements", verifyToken, async (req, res) => {
-    //   const announcement = req.body;
-    //   const result = await announcementsCollection.insertOne(announcement);
-    //   res.send(result);
-    // });
-    app.post("/announcements", verifyToken, async (req, res) => {
+  
+    app.post("/announcements", verifyToken, verifyAdmin, async (req, res) => {
       const announcement = req.body;
 
       // Add current date to the announcement
@@ -494,7 +388,7 @@ async function run() {
 
 
     // agreement requests
-    app.get("/agreementRequests", verifyToken, async (req, res) => {
+    app.get("/agreementRequests", verifyToken,verifyAdmin, async (req, res) => {
       const query = { status: "pending" };
       const result = await agreementtCollection.find(query).toArray();
       res.send(result);
@@ -502,7 +396,7 @@ async function run() {
 
     // agreement request accept
 
-    app.patch("/acceptUser/:id", verifyToken, async (req, res) => {
+    app.patch("/acceptUser/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
 
       // console.log(id);
@@ -541,7 +435,7 @@ async function run() {
 
     // agreement rejected api
 
-    app.patch("/rejectedUser/:id", verifyToken, async (req, res) => {
+    app.patch("/rejectedUser/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -581,7 +475,7 @@ async function run() {
       }
     });
 
-    app.post("/coupons", verifyToken, async (req, res) => {
+    app.post("/coupons", verifyToken, verifyAdmin, async (req, res) => {
       const coupon = req.body;
       const result = await couponsCollection.insertOne(coupon);
       res.send(result);
@@ -589,7 +483,7 @@ async function run() {
 
     /// validation coupon
     // API Endpoint: Validate a Coupon
-    app.get("/coupons/:code", async (req, res) => {
+    app.get("/coupons/:code", verifyToken, verifyMember, async (req, res) => {
       try {
         const { code } = req.params;
         console.log(code);
