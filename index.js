@@ -311,7 +311,7 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/agreements", verifyToken, verifyMember, async (req, res) => {
+    app.post("/agreements", verifyToken, async (req, res) => {
       const agreement = req.body;
       const { userEmail } = req.body;
 
