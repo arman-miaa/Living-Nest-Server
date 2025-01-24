@@ -1,4 +1,4 @@
-# 🚀 Backend Project  
+# 🚀 Backend Project
 
 This repository contains the backend implementation of the project. It provides the necessary APIs and logic to power the frontend application and manage data efficiently.
 
@@ -25,7 +25,7 @@ The purpose of this project is to provide an intuitive and secure platform for a
 
 ## 🌐 Client Repository
 
-- 🖥️ **Client Site Repository:** [https://github.com/Programming-Hero-Web-Course4/b10a12-client-side-arman-miaa](https://github.com/Programming-Hero-Web-Course4/b10a12-client-side-arman-miaa)
+- 🖥️ **Client Site Repository:** [https://github.com/arman-miaa/Living-Nest-](https://github.com/arman-miaa/Living-Nest-)
 
 ---
 
@@ -83,12 +83,113 @@ The purpose of this project is to provide an intuitive and secure platform for a
 
 ### Prerequisites
 
-- Node.js (>=14.0.0)
-- MongoDB (or a MongoDB Atlas account)
+- Node.js (>=14.0.0)  
+- MongoDB (or a MongoDB Atlas account)  
 - Stripe Account for payment integration
 
 ### Steps
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-repository
+   git clone https://github.com/your-repository-name
+   ```
+
+2. Navigate to the project directory:
+   ```bash
+   cd your-repository-name
+   ```
+
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Create a `.env` file in the root directory and add the following variables:
+   ```env
+   PORT=5000
+   MONGO_URI=your-mongodb-uri
+   JWT_SECRET=your-jwt-secret
+   STRIPE_SECRET_KEY=your-stripe-secret-key
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   ```
+
+5. Start the development server:
+   ```bash
+   npm start
+   ```
+
+6. The backend will run on `http://localhost:5000` by default.
+
+---
+
+## 📄 API Documentation
+
+### Authentication
+
+- **POST /auth/register**: Register a new user.  
+  - Request Body:
+    ```json
+    {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "password": "securepassword"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "message": "User registered successfully",
+      "token": "jwt-token"
+    }
+    ```
+
+- **POST /auth/login**: Login a user.  
+  - Request Body:
+    ```json
+    {
+      "email": "john@example.com",
+      "password": "securepassword"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "message": "Login successful",
+      "token": "jwt-token"
+    }
+    ```
+
+### Members Management
+
+- **GET /members**: Retrieve all members (Admin only).  
+- **PATCH /members/:id**: Update a member's status (Admin only).  
+
+### Payment Management
+
+- **POST /payments**: Create a new payment record.  
+- **GET /payments**: Retrieve payment history for a user.
+
+### Coupons Management
+
+- **GET /coupons**: Retrieve all coupons.  
+- **POST /coupons**: Add a new coupon (Admin only).  
+- **PATCH /coupons/:id**: Update coupon availability (Admin only).
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
+
+---
+
+
+
+---
+
+## 📞 Contact
+
+For any inquiries, please reach out to:
+
+- **Email**: arman.miaa36@gmail.com
